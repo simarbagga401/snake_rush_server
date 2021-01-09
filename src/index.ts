@@ -16,6 +16,8 @@ const io = require("socket.io")(server, {
   },
 });
 
+type Color = "green" | "white" | "blue";
+
 export interface Room {
   room_id: string;
   clients: Array<string>;
@@ -23,6 +25,7 @@ export interface Room {
 export interface Client {
   client_id: string;
   room_id: string;
+  color: Color;
 }
 let rooms: Room[] = [];
 let clients: Client[] = [];
@@ -38,6 +41,7 @@ io.sockets.on("connection", (connection: any) => {
   clients.push({
     client_id: connection.id,
     room_id,
+    color: "green",
   });
 
   let payload = {
@@ -53,6 +57,7 @@ io.sockets.on("connection", (connection: any) => {
       let payload;
       let room = find_room(room_id);
       let room_creator = room?.clients[0];
+
       if (!room) payload = { client: "Requestor", err_msg: "Room Not Found" };
       else if (room.clients.length > 2)
         payload = { client: "Requestor", err_msg: "Room Limit Reached" };
@@ -66,9 +71,14 @@ io.sockets.on("connection", (connection: any) => {
           let room_index = rooms.indexOf(prev_room);
           rooms.splice(room_index, 1);
         }
+
         room?.clients.push(client_id);
+        let index_of_client = room?.clients.indexOf(client_id);
+
         if (client) {
           client.room_id = room_id;
+          if (index_of_client === 1) client.color = "white";
+          if (index_of_client === 2) client.color = "blue";
         }
 
         payload = {
@@ -88,18 +98,20 @@ io.sockets.on("connection", (connection: any) => {
   connection.on(
     "outgoing_chat",
     ({
-      client_id,
       room_id,
+      client_id,
       chat,
     }: {
-      client_id: string;
       room_id: string;
+      client_id: string;
       chat: string;
     }) => {
       let room = find_room(room_id);
-      // let is_client_in_room = room?.clients.includes(client_id);
+      let color = find_client(client_id)?.color;
+
       let payload = {
         client_id,
+        color,
         chat,
       };
       room?.clients.forEach((c: string) => {
@@ -122,8 +134,8 @@ io.sockets.on("connection", (connection: any) => {
       y: number;
     }) => {
       let room = find_room(room_id);
-      // let is_client_in_room = room?.clients.includes(client_id);
-      let payload = { x, y };
+      let color = find_client(client_id)?.color;
+      let payload = { color, x, y };
       room?.clients.forEach((c: string) => {
         if (c != client_id) connection.to(c).emit("snake_pos_server", payload);
       });

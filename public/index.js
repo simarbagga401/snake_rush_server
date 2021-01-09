@@ -30,6 +30,7 @@ io.sockets.on("connection", (connection) => {
     clients.push({
         client_id: connection.id,
         room_id,
+        color: "green",
     });
     let payload = {
         client_id: connection.id,
@@ -57,19 +58,26 @@ io.sockets.on("connection", (connection) => {
                 rooms.splice(room_index, 1);
             }
             room === null || room === void 0 ? void 0 : room.clients.push(client_id);
+            let index_of_client = room === null || room === void 0 ? void 0 : room.clients.indexOf(client_id);
             if (client) {
                 client.room_id = room_id;
+                if (index_of_client === 1)
+                    client.color = "white";
+                if (index_of_client === 2)
+                    client.color = "blue";
             }
             payload = Object.assign({ client: "Requestor" }, room);
         }
         connection.emit("enter_game_res", payload);
         connection.to(room_creator).emit("enter_game_res", Object.assign({ client: "Creator" }, room));
     });
-    connection.on("outgoing_chat", ({ client_id, room_id, chat, }) => {
+    connection.on("outgoing_chat", ({ room_id, client_id, chat, }) => {
+        var _a;
         let room = find_room(room_id);
-        // let is_client_in_room = room?.clients.includes(client_id);
+        let color = (_a = find_client(client_id)) === null || _a === void 0 ? void 0 : _a.color;
         let payload = {
             client_id,
+            color,
             chat,
         };
         room === null || room === void 0 ? void 0 : room.clients.forEach((c) => {
@@ -78,9 +86,10 @@ io.sockets.on("connection", (connection) => {
         });
     });
     connection.on("snake_pos_client", ({ room_id, client_id, x, y, }) => {
+        var _a;
         let room = find_room(room_id);
-        // let is_client_in_room = room?.clients.includes(client_id);
-        let payload = { x, y };
+        let color = (_a = find_client(client_id)) === null || _a === void 0 ? void 0 : _a.color;
+        let payload = { color, x, y };
         room === null || room === void 0 ? void 0 : room.clients.forEach((c) => {
             if (c != client_id)
                 connection.to(c).emit("snake_pos_server", payload);
