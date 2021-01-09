@@ -39,22 +39,34 @@ io.sockets.on("connection", (connection) => {
     if (payload)
         console.log(payload);
     connection.on("enter_game_req", ({ client_id, room_id }) => {
+        var _a;
         let payload;
-        let room = rooms.find((r) => r.room_id === room_id);
+        let room = find_room(room_id);
         let room_creator = room === null || room === void 0 ? void 0 : room.clients[0];
         if (!room)
             payload = { client: "Requestor", err_msg: "Room Not Found" };
         else if (room.clients.length > 2)
             payload = { client: "Requestor", err_msg: "Room Limit Reached" };
         else {
-            room.clients.push(client_id);
+            let client_prev_room_id = (_a = find_client(client_id)) === null || _a === void 0 ? void 0 : _a.room_id;
+            let prev_room = find_room(client_prev_room_id);
+            let client = find_client(client_id);
+            let room = find_room(room_id);
+            if (prev_room) {
+                let room_index = rooms.indexOf(prev_room);
+                rooms.splice(room_index, 1);
+            }
+            room === null || room === void 0 ? void 0 : room.clients.push(client_id);
+            if (client) {
+                client.room_id = room_id;
+            }
             payload = Object.assign({ client: "Requestor" }, room);
         }
         connection.emit("enter_game_res", payload);
         connection.to(room_creator).emit("enter_game_res", Object.assign({ client: "Creator" }, room));
     });
     connection.on("outgoing_chat", ({ client_id, room_id, chat, }) => {
-        let room = rooms.find((r) => r.room_id === room_id);
+        let room = find_room(room_id);
         // let is_client_in_room = room?.clients.includes(client_id);
         let payload = {
             client_id,
@@ -66,21 +78,31 @@ io.sockets.on("connection", (connection) => {
         });
     });
     connection.on("snake_pos_client", ({ room_id, client_id, x, y, }) => {
-        let room = rooms.find((r) => r.room_id === room_id);
+        let room = find_room(room_id);
         // let is_client_in_room = room?.clients.includes(client_id);
         let payload = { x, y };
         room === null || room === void 0 ? void 0 : room.clients.forEach((c) => {
             if (c != client_id)
                 connection.to(c).emit("snake_pos_server", payload);
         });
-        //disconnection too
     });
     connection.on("disconnect", () => {
-        var _a;
         console.log(connection.id + "  Disconnected");
-        let room_id = (_a = clients.find((c) => c.client_id === connection.id)) === null || _a === void 0 ? void 0 : _a.room_id;
-        let room = rooms.find((r) => r.room_id == room_id);
-        //Remove User From Room
-        // room?.clients
+        let client = find_client(connection.id);
+        let client_index = clients.indexOf(client);
+        let room = find_room(client === null || client === void 0 ? void 0 : client.room_id);
+        let room_index = rooms.indexOf(room);
+        clients.splice(client_index, 1); // Remove Client Obj
+        if (room && (room === null || room === void 0 ? void 0 : room.clients.length) < 1) {
+            rooms.splice(room_index); // Remove Room
+        }
     });
 });
+function find_room(room_id) {
+    let room = rooms.find((r) => r.room_id === room_id);
+    return room;
+}
+function find_client(client_id) {
+    let client = clients.find((c) => c.client_id === client_id);
+    return client;
+}
