@@ -29,7 +29,7 @@ io.sockets.on("connection", (connection) => {
     });
     clients.push({
         client_id: connection.id,
-        room_id
+        room_id,
     });
     let payload = {
         client_id: connection.id,
@@ -78,7 +78,7 @@ io.sockets.on("connection", (connection) => {
     connection.on("disconnect", () => {
         var _a;
         console.log(connection.id + "  Disconnected");
-        let room_id = (_a = clients.find(c => c.client_id === connection.id)) === null || _a === void 0 ? void 0 : _a.room_id;
+        let room_id = (_a = clients.find((c) => c.client_id === connection.id)) === null || _a === void 0 ? void 0 : _a.room_id;
         let room = rooms.find((r) => r.room_id == room_id);
         //Remove User From Room
         // room?.clients
