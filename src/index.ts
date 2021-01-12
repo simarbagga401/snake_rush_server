@@ -83,6 +83,7 @@ io.sockets.on("connection", (connection: any) => {
 
         payload = {
           client: "Requestor",
+          client_color: client?.color,
           ...room,
         };
       }

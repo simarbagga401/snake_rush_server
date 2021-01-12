@@ -66,7 +66,7 @@ io.sockets.on("connection", (connection) => {
                 if (index_of_client === 2)
                     client.color = "blue";
             }
-            payload = Object.assign({ client: "Requestor" }, room);
+            payload = Object.assign({ client: "Requestor", client_color: client === null || client === void 0 ? void 0 : client.color }, room);
         }
         connection.emit("enter_game_res", payload);
         connection.to(room_creator).emit("enter_game_res", Object.assign({ client: "Creator" }, room));
