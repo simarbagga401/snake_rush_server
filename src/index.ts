@@ -67,7 +67,7 @@ io.sockets.on("connection", (connection: any) => {
         let client = find_client(client_id);
         let room = find_room(room_id);
 
-        if (prev_room) {
+        if (prev_room && prev_room.clients.length < 1) {
           let room_index = rooms.indexOf(prev_room);
           rooms.splice(room_index, 1);
         }
@@ -151,9 +151,10 @@ io.sockets.on("connection", (connection: any) => {
     let room_index = rooms.indexOf(room!);
     clients.splice(client_index, 1); // Remove Client Obj
 
-    if (room && room?.clients.length < 1) {
-      rooms.splice(room_index); // Remove Room
+    if (room && room?.clients.length == 1) {
+      rooms.splice(room_index); // Remove Room if room
     }
+    // disconnect socket req
   });
 });
 
@@ -166,3 +167,4 @@ function find_client(client_id: string) {
   let client = clients.find((c: Client) => c.client_id === client_id);
   return client;
 }
+//implement binary search
